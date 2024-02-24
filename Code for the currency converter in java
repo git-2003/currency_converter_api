@@ -1,0 +1,62 @@
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.Scanner;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonArray;
+
+class converter {
+    static double getExchange(String fromcurrency, String tocurrency,double amount) {
+
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://currency-converter18.p.rapidapi.com/api/v1/convert?from=" + fromcurrency + "&to=" + tocurrency + "&amount="+amount))
+                    .header("X-RapidAPI-Key", "7da1941dedmsh9409b97ba8ca890p19dc7fjsna5b0207ec299")
+                    .header("X-RapidAPI-Host", "currency-converter18.p.rapidapi.com")
+                    .method("GET", HttpRequest.BodyPublishers.noBody())
+                    .build();
+            HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+            System.out.println(response.body());
+            JsonParser jsonParser = new JsonParser();
+            JsonObject jsonObject = jsonParser.parse(response.body()).getAsJsonObject();
+
+            // Check for the presence of validationMessage array
+            if (jsonObject.has("validationMessage")) {
+                JsonArray validationMessageArray = jsonObject.getAsJsonArray("validationMessage");
+                double exchangeRate;
+                // Iterate through the array to find a numeric value
+                for (int i = 0; i < validationMessageArray.size(); i++) {
+                    try {
+                        exchangeRate= Double.parseDouble(validationMessageArray.get(i).getAsString());
+                        double convertedAmount = amount * exchangeRate;
+                        return convertedAmount;
+                    } catch (NumberFormatException e) {
+                        // Ignore if not a valid double value
+                    }
+                }
+            }
+
+        } catch (Exception e) {
+            System.out.println(e.toString());
+            // TODO: handle exception
+        }
+        return 0.0;
+    }
+
+    public static void main(String[] args) {
+        Scanner input = new Scanner(System.in);
+
+        System.out.print("Enter the source currency code: ");
+        String currency1 = input.nextLine();
+
+        System.out.print("Enter the target currency code: ");
+        String currency2 = input.nextLine();
+        System.out.println("Ente the curreccy amount to be converted ");
+        double currency_amount=input.nextDouble();
+
+        double result = getExchange(currency1, currency2,currency_amount);
+
+    }
+}
